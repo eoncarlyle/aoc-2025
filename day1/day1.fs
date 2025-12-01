@@ -76,25 +76,16 @@ let evaluatePart2 (state: State) (adjustment: Vector) : State =
         else
             rawPosition
 
-    let intermediateZero =
-        if (0 <= rawPosition && rawPosition <= 99) then
-            0
-        elif
-            ((rawPosition < 0 && rawPosition > -100)
-             || (rawPosition > 100 && rawPosition < 200))
-        then
-            if (rawPosition % 100 = 0) then 0 else 1
-        elif (0 <> abs (rawPosition) % 100) then
-            (abs rawPosition / 100)
-        else
-            (abs rawPosition / 100) - 1
+    let finalWheelFrame = // The problem is that position 86 to 0 is a frame change of 0
+        match rawPosition with
+        | rawPosition when rawPosition < 0 -> (-1 * rawPosition + 100) / 100
+        | rawPosition when rawPosition = 0 -> 1
+        | _ -> rawPosition / 100
 
-    Console.WriteLine $"{state} -> {adjustment}"
-    Console.WriteLine intermediateZero
-    let zeroIncrement = intermediateZero + (if position = 0 then 1 else 0)
+    Console.WriteLine $"{state.Position} -> {rawPosition} -> {finalWheelFrame}"
 
     { Position = position
-      ZeroCount = state.ZeroCount + zeroIncrement }
+      ZeroCount = state.ZeroCount + finalWheelFrame }
 
 let part1 =
     Array.fold evaluatePart1 { Position = 50; ZeroCount = 0 }

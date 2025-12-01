@@ -4,7 +4,6 @@ open System.IO
 open System.Text.RegularExpressions
 open System
 
-let lines = File.ReadAllLines "./day1/test.txt"
 
 [<Struct>]
 type Direction =
@@ -82,15 +81,33 @@ let evaluatePart2 (state: State) (adjustment: Vector) : State =
         | rawPosition when rawPosition = 0 -> 1
         | _ -> rawPosition / 100
 
-    Console.WriteLine $"{state.Position} -> {rawPosition} -> {finalWheelFrame}"
-
     { Position = position
       ZeroCount = state.ZeroCount + finalWheelFrame }
 
-let part1 =
-    Array.fold evaluatePart1 { Position = 50; ZeroCount = 0 }
-    <| Array.map parse lines
+let paths = [| ("Test", "./day1/test.txt"); ("Prod", "./day1/prod.txt") |]
 
-let part2 =
-    Array.fold evaluatePart2 { Position = 50; ZeroCount = 0 }
-    <| Array.map parse lines
+let solution () =
+    paths
+    |> Array.iter (fun a ->
+        Console.WriteLine(fst a)
+        Console.WriteLine("==============")
+
+        let lines = File.ReadAllLines <| snd a
+
+        Console.WriteLine "Part 1"
+
+        let part1 =
+            Array.fold evaluatePart1 { Position = 50; ZeroCount = 0 }
+            <| Array.map parse lines
+
+        Console.WriteLine part1
+
+        Console.WriteLine "Part 2"
+
+        let part2 =
+            Array.fold evaluatePart2 { Position = 50; ZeroCount = 0 }
+            <| Array.map parse lines
+
+        Console.WriteLine part2
+
+        ())

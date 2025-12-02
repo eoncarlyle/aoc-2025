@@ -1,5 +1,6 @@
 module day1
 
+open utils
 open System.IO
 open System.Text.RegularExpressions
 open System
@@ -84,30 +85,38 @@ let evaluatePart2 (state: State) (adjustment: Vector) : State =
     { Position = position
       ZeroCount = state.ZeroCount + finalWheelFrame }
 
-let paths = [| ("Test", "./day1/test.txt"); ("Prod", "./day1/prod.txt") |]
+let problemInputs: ProblemInput array =
+    [| { Label = "Test"
+         Path = "./day1/test.txt" }
+       { Label = "Prod"
+         Path = "./day1/prod.txt" } |]
 
-let solution () =
-    paths
-    |> Array.iter (fun a ->
-        Console.WriteLine(fst a)
-        Console.WriteLine("==============")
+type Problem() =
+    static member displaySolution problemInputs =
+        problemInputs
+        |> Array.iter (fun problemInput ->
+            Console.WriteLine problemInput.Label
+            Console.WriteLine("==============")
 
-        let lines = File.ReadAllLines <| snd a
+            let lines = File.ReadAllLines problemInput.Path
 
-        Console.WriteLine "Part 1"
+            Console.WriteLine "Part 1"
 
-        let part1 =
-            Array.fold evaluatePart1 { Position = 50; ZeroCount = 0 }
-            <| Array.map parse lines
+            let part1 =
+                Array.fold evaluatePart1 { Position = 50; ZeroCount = 0 }
+                <| Array.map parse lines
 
-        Console.WriteLine part1
+            Console.WriteLine part1
 
-        Console.WriteLine "Part 2"
+            Console.WriteLine "Part 2"
 
-        let part2 =
-            Array.fold evaluatePart2 { Position = 50; ZeroCount = 0 }
-            <| Array.map parse lines
+            let part2 =
+                Array.fold evaluatePart2 { Position = 50; ZeroCount = 0 }
+                <| Array.map parse lines
 
-        Console.WriteLine part2
+            Console.WriteLine part2
 
-        ())
+            ())
+
+    interface IProblem with
+        static member displaySolution problemInputs : unit = Problem.displaySolution problemInputs

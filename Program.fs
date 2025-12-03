@@ -3,4 +3,5 @@ open System
 
 
 //day1.Problem.displaySolution day1.problemInputs
-day2.Problem.displaySolution day2.problemInputs
+//day2.Problem.displaySolution day2.problemInputs
+day3.Problem.displaySolution day3.problemInputs

@@ -1,5 +1,7 @@
 # README.md
 
+Day 3: REPL workflow: `dotnet fsi` in `bin/Debug/net8.0` then `#r "aoc-2025.dll"`
+
 Day 1: No matter what check that prod works before doing test, got throttled as I made successive attempts
 
 Day starter:

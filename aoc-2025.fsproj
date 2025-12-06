@@ -15,9 +15,7 @@
     <Compile Include="day3/day3.fs" />
     <Compile Include="day4/day4.fs" />
     <Compile Include="day5/day5.fs"/>
-    <Content Include="day5\aoc-test.txt" />
-    <Content Include="day5\personal-test.txt" />
-    <Content Include="day5\prod.txt" />
+    <Compile Include="day6/day6.fs"/>
     <Compile Include="Program.fs" />
   </ItemGroup>
 

@@ -3,7 +3,6 @@ module day7
 open utils
 open System
 open System.IO
-open System.Collections.Generic
 
 let getRawGrid path =
     File.ReadAllLines path
@@ -11,38 +10,30 @@ let getRawGrid path =
     |> Array.map _.ToCharArray()
 
 
-let calculateNextRow (incomingNextRow: char array) (lastPipeLocations: int array) =
-    let nextRow = [| for i in 1 .. incomingNextRow.Length -> '.' |]
+let calculateNextRow (unpaintedNextRow: char array) (lastPipeLocations: int array) =
+    // There's probably a better way to do this coppying
+    let nextRow = [| for i in 0 .. unpaintedNextRow.Length - 1 -> unpaintedNextRow[i] |]
 
-    //let mutable splitMap = lastPipeLocations |> Array.map (fun idx -> idx, false) |> Map
     let mutable splitSet = Set<int>([])
 
-    for pair in (Array.indexed incomingNextRow)[.. nextRow.Length - 1] do
-        let (currentIndex, currentValue) = pair
+    let legalAdjacentIndicies (row: char array) location =
+        match location with
+        | 0 -> [| location + 1 |]
+        | a when a = row.Length - 1 -> [| location - 1 |]
+        | _ -> [| location - 1; location + 1 |]
 
-        // This is broken because you need to iterate over both 'split by right' and 'split by left' cases.
-        // The smarter thing to do is to iterate over the last pipe locations, but that is a tomorrow problem
-        if currentValue = '^' then
-            nextRow[currentIndex] <- '^' //This wouldn't work if we needed to support '^^' in rows
-        elif Array.contains currentIndex lastPipeLocations then
-            nextRow[currentIndex] <- '|'
-        elif
-            currentIndex < nextRow.Length - 1
-            && incomingNextRow[currentIndex + 1] = '^'
-            && Array.contains (currentIndex + 1) lastPipeLocations
-        then
-            nextRow[currentIndex] <- '|'
-            splitSet <- splitSet.Add(currentIndex + 1)
-        elif
-            currentIndex > 0
-            && incomingNextRow[currentIndex - 1] = '^'
-            && Array.contains (currentIndex - 1) lastPipeLocations
-        then
-            nextRow[currentIndex] <- '|'
-            splitSet <- splitSet.Add(currentIndex - 1)
+    lastPipeLocations
+    |> Array.iter (fun pipeLocation ->
+        if unpaintedNextRow[pipeLocation] = '^' then
+            let indicies = legalAdjacentIndicies unpaintedNextRow pipeLocation
+            indicies |> Array.iter (fun index -> nextRow[index] <- '|')
+            splitSet <- splitSet.Add pipeLocation
+        else
+            nextRow[pipeLocation] <- '|'
 
-    (String nextRow) + splitSet.Count.ToString() |> Console.WriteLine
-    (nextRow, splitSet.Count)
+        ())
+
+    nextRow, splitSet.Count
 
 let solution (rawGrid: char array array) =
 

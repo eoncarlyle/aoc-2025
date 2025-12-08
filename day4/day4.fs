@@ -8,7 +8,7 @@ let grid (path: String) =
     let rawGrid =
         File.ReadAllLines path
         |> Array.filter (fun a -> a.Length > 0)
-        |> Array.map (fun a -> a.ToCharArray())
+        |> Array.map _.ToCharArray()
         |> Array.map (fun a -> Array.append a [| '.' |] |> Array.append [| '.' |]) //Padding
 
     let paddedRow = seq { for i in 1 .. rawGrid[0].Length -> '.' } |> Seq.toArray

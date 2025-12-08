@@ -20,12 +20,15 @@ Day starter:
 ```fsharp
 module dayN
 
+open utils
 open System
 
-let problemInputs: ProblemInput array = [||]
-
 type Problem() =
-    static member displaySolution problemInputs = ()
+    static member displaySolution problemInputs =
+        problemInputs |> Array.iter (fun problemInput ->
+            Console.WriteLine problemInput.Label
+            Console.WriteLine("==============")   
+            ())
 
     interface IProblem with
         static member displaySolution problemInputs = Problem.displaySolution problemInputs

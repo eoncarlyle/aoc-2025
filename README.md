@@ -1,5 +1,12 @@
 # README.md
 
+Day 8:
+```fsharp
+//The type 'HashSet<Point>' does not support the 'comparison' constraint. For example, it does not support the 'System.IComparable' interface (F# Compiler 1)
+let a: Map<HashSet<Point>, int> = Map []
+
+```
+
 Day 6: I don't know why this didn't build
 
 ```fsharp
@@ -27,7 +34,7 @@ type Problem() =
     static member displaySolution problemInputs =
         problemInputs |> Array.iter (fun problemInput ->
             Console.WriteLine problemInput.Label
-            Console.WriteLine("==============")   
+            Console.WriteLine("==============")
             ())
 
     interface IProblem with

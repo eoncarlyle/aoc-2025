@@ -37,13 +37,17 @@ let bfs (adjacentMap: Map<Point, list<Point>>) (root: Point) =
     let explored = HashSet<Point>()
     explored.Add(root) |> ignore
     let queue = Queue<Point>()
-    queue.Enqueue(root) |> ignore
+    queue.Enqueue(root)
 
     while queue.Count > 0 do
         let v = queue.Dequeue()
 
-        if explored.Contains(v) |> not then
-            adjacentMap[v] |> List.iter (fun a -> queue.Enqueue(a))
+        adjacentMap[v]
+        |> List.iter (fun w ->
+            if explored.Contains(w) |> not then
+                explored.Add(w) |> ignore
+                queue.Enqueue(w)
+        )
 
     explored
 
@@ -55,8 +59,6 @@ let getAdjacentMap (grid: (Point) array) : Map<Point, list<Point>> =
     grid |> Array.map (fun a -> a, []) |> Map
 
 let getSolution (grid: Point array) (times: int) =
-
-    // Adjacent map doesn't include some things that it should include
     let mutable adjacentMap = getAdjacentMap grid
     let distanceMap = getDistanceMap grid
 
@@ -65,33 +67,26 @@ let getSolution (grid: Point array) (times: int) =
 
     for idx in [ 0 .. times - 1 ] do
         let pt1, pt2 = sortedDistanceKeys[idx]
-        // We're assuming that pt1, pt2 symetric
+
         if adjacentMap[pt1] |> List.contains pt2 |> not then
             adjacentMap <- adjacentMap.Add(pt1, adjacentMap[pt1] @ [ pt2 ])
             adjacentMap <- adjacentMap.Add(pt2, adjacentMap[pt2] @ [ pt1 ])
 
         ()
 
-    //adjacentMap.Keys
-    //|> Seq.iter (fun a ->
-    //    Console.WriteLine a
-    //    Console.WriteLine adjacentMap[a]
-    //    Console.WriteLine "-----")
-
-    let sizeTable = Dictionary<HashSet<Point>, int>()
-
+    let sizes = HashSet<int>()
+    let visited = HashSet<Point>()
+     
     adjacentMap.Keys
     |> Seq.iter (fun edge ->
         let cluster = bfs adjacentMap edge
-
-        if sizeTable.ContainsKey(cluster) |> not then
-            sizeTable.Add(cluster, cluster.Count)
-
+        if visited.Overlaps cluster |> not then
+            sizes.Add(cluster.Count) |> ignore
+            cluster |> Seq.iter (fun a -> visited.Add(a) |> ignore)
         ())
 
-    //sizeTable.Values |> Seq.iter Console.WriteLine
 
-    sizeTable.Values |> Seq.sortDescending |> Seq.take 3 |> Seq.sum
+    sizes |> Seq.sortDescending |> Seq.take 3 |> Seq.reduce (*)
 
 
 type Problem() =
@@ -100,10 +95,6 @@ type Problem() =
         |> Array.iter (fun problemInput ->
             Console.WriteLine problemInput.Label
             Console.WriteLine("==============")
-            //let distanceMap = getGrid problemInput.Path |> getDistanceMap
-            //let min = distanceMap |> _.Keys |> Seq.minBy (fun key -> distanceMap[key])
-            //Console.WriteLine(min)
-
             let grid = getGrid problemInput.Path
 
             let solution =

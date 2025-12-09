@@ -8,4 +8,5 @@ open System
 //utils.getProblemInputs "day4" |> day4.Problem.displaySolution
 //utils.getProblemInputs "day5" |> day5.Problem.displaySolution
 //utils.getProblemInputs "day6" |> day6.Problem.displaySolution
-utils.getProblemInputs "day7" |> day7.Problem.displaySolution
+//utils.getProblemInputs "day7" |> day7.Problem.displaySolution
+utils.getProblemInputs "day8" |> day8.Problem.displaySolution

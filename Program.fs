@@ -10,4 +10,5 @@ open System
 //utils.getProblemInputs "day6" |> day6.Problem.displaySolution
 //utils.getProblemInputs "day7" |> day7.Problem.displaySolution
 //utils.getProblemInputs "day8" |> day8.Problem.displaySolution
-utils.getProblemInputs "day9" |> day9.Problem.displaySolution
+//utils.getProblemInputs "day9" |> day9.Problem.displaySolution
+utils.getProblemInputs "day10" |> day10.Problem.displaySolution

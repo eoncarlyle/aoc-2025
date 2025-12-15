@@ -6,8 +6,8 @@ open System
 open System.IO
 
 type Machine =
-    { Target: bool array
-      Buttons: int array array }
+    { Target: bool list
+      Buttons: int list list }
 
 let getGrid path =
     File.ReadAllLines path |> Array.filter stringNotEmpty
@@ -25,24 +25,47 @@ let apply (current: bool array) (incomingButtons: int array) =
 let pressSum (map: Map<int array, int>) = Map.values map |> Seq.sum
 
 let solver (machine: Machine) =
-    let cache = ref Map<Map<int array, int>, int>
+    let cache: ref<Map<Map<int array, int>, int option>> = Map [||] |> ref
 
-    let rec innerSolver cache target (selected: Map<int array, int>) current =
-        if target = current then
-            Some selected
+    let rec innerSolver
+        (cache: ref<Map<Map<int array, int>, int option>>)
+        target
+        (selected: Map<int array, int>)
+        current
+        : int option =
+        if Map.containsKey selected cache.Value then
+            cache.Value[selected]
+        elif target = current then
+            cache.Value <- Map.add selected (pressSum selected |> Some) cache.Value
+            pressSum selected |> Some
         else
             let eligibleValues =
                 Map.toArray selected |> Array.filter (fun entry -> snd entry < 2)
 
-            eligibleValues
-            |> Array.map (fun entry ->
-                let (buttons, times) = entry
-                let nextSelected = Map.add buttons (times + 1) selected
-                let nextCurrent = apply current buttons
-                innerSolver cache target nextSelected nextCurrent)
-            |> Array.choose id
-            |> Array.sortBy pressSum
-            |> Array.tryHead
+            let values = Map.values cache.Value |> Seq.choose id
+
+            let maybeMin =
+                if Seq.length values = 0 then
+                    Option.None
+                else
+                    Seq.length values |> Some
+
+            if Option.exists (fun min -> pressSum selected > min) maybeMin then
+                None
+            else
+                let maybeSolution =
+                    eligibleValues
+                    |> Array.map (fun entry ->
+                        let (buttons, times) = entry
+                        let nextSelected = Map.add buttons (times + 1) selected
+                        let nextCurrent = apply current buttons
+                        innerSolver cache target nextSelected nextCurrent)
+                    |> Array.choose id
+                    |> Array.sort
+                    |> Array.tryHead
+
+                cache.Value <- Map.add selected maybeSolution cache.Value
+                maybeSolution
 
     let initialSelected: Map<int array, int> =
         machine.Buttons |> Array.map (fun a -> a, 0) |> Map
@@ -50,7 +73,9 @@ let solver (machine: Machine) =
     let initialCurrent =
         seq { for _ in 1 .. machine.Target.Length -> false } |> Seq.toArray
 
-    innerSolver cache machine.Target initialSelected initialCurrent
+    let a = innerSolver cache machine.Target initialSelected initialCurrent
+    Console.WriteLine(Map.keys cache.Value |> Seq.length)
+    a
 
 let getTarget (row: String) =
     let index char' =
@@ -89,9 +114,11 @@ type Problem() =
             Console.WriteLine("==============")
             let machines = getGrid problemInput.Path |> Array.map getTarget
 
-            let sum = machines |> Array.map (solver >> Option.get >> pressSum) |> Array.sum
+            for machine in machines do
+                Console.WriteLine(solver machine |> Option.get)
 
-            Console.WriteLine sum
+            //let sum = machines |> Array.map (solver >> Option.get) |> Array.sum
+            //Console.WriteLine sum
             ())
 
     interface IProblem with

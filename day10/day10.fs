@@ -25,36 +25,24 @@ let apply (current: bool array) (incomingButtons: int array) =
 let pressSum (map: Map<int array, int>) = Map.values map |> Seq.sum
 
 let solver (machine: Machine) =
-    let globalSolution: Map<int array, int> option ref = ref None
-    
-    let rec innerSolver
-        (globalSolution: Map<int array, int> option ref)
-        (target: bool array)
-        (selected: Map<int array, int>)
-        (current: bool array)
-        : Unit =
-        if target = current then
+    let cache = ref Map<Map<int array, int>, int>
 
-            globalSolution.Value <-
-                globalSolution.Value
-                |> Option.map (fun currSol ->
-                    if (pressSum currSol > pressSum selected) then
-                        selected
-                    else
-                        currSol)
-                |> Option.orElse (Some selected)
+    let rec innerSolver cache target (selected: Map<int array, int>) current =
+        if target = current then
+            Some selected
         else
             let eligibleValues =
                 Map.toArray selected |> Array.filter (fun entry -> snd entry < 2)
 
             eligibleValues
-            |> Array.iter (fun entry ->
+            |> Array.map (fun entry ->
                 let (buttons, times) = entry
                 let nextSelected = Map.add buttons (times + 1) selected
                 let nextCurrent = apply current buttons
-                let thisSolution = innerSolver globalSolution target nextSelected nextCurrent
-
-                ())
+                innerSolver cache target nextSelected nextCurrent)
+            |> Array.choose id
+            |> Array.sortBy pressSum
+            |> Array.tryHead
 
     let initialSelected: Map<int array, int> =
         machine.Buttons |> Array.map (fun a -> a, 0) |> Map
@@ -62,8 +50,7 @@ let solver (machine: Machine) =
     let initialCurrent =
         seq { for _ in 1 .. machine.Target.Length -> false } |> Seq.toArray
 
-    innerSolver globalSolution machine.Target initialSelected initialCurrent
-    globalSolution
+    innerSolver cache machine.Target initialSelected initialCurrent
 
 let getTarget (row: String) =
     let index char' =
@@ -101,8 +88,10 @@ type Problem() =
             Console.WriteLine problemInput.Label
             Console.WriteLine("==============")
             let machines = getGrid problemInput.Path |> Array.map getTarget
-            let a = machines |> Array.map solver
-            Console.WriteLine a
+
+            let sum = machines |> Array.map (solver >> Option.get >> pressSum) |> Array.sum
+
+            Console.WriteLine sum
             ())
 
     interface IProblem with

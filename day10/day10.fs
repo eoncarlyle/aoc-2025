@@ -4,6 +4,7 @@ open day7
 open utils
 open System
 open System.IO
+open System.Diagnostics
 
 type Machine =
     { Target: bool list
@@ -13,58 +14,58 @@ let getGrid path =
     File.ReadAllLines path |> Array.filter stringNotEmpty
 
 
-let apply (current: bool list) (incomingButtons: int list) =
+let apply (current: bool list) (incomingButton: int list) =
     current
     |> List.indexed
     |> List.map (fun pair ->
-        if List.contains (fst pair) incomingButtons then
+        if List.contains (fst pair) incomingButton then
             not (snd pair)
         else
             snd pair)
 
-let pressSum (map: Map<int list, int>) = Map.values map |> Seq.sum
+let getListTable (selected: int list list) = List.countBy id selected |> List.sort
 
 let solver (machine: Machine) =
-    let cache: ref<Map<Map<int list, int>, int option>> = Map [||] |> ref
+    let cache: ref<Map<list<list<int> * int>, int option>> = Map [||] |> ref
+    let watch = Stopwatch()
+    watch.Start()
 
     let rec innerSolver
-        (cache: ref<Map<Map<int list, int>, int option>>)
+        (cache: ref<Map<list<list<int> * int>, int option>>)
         target
-        (selected: Map<int list, int>)
+        (selected: int list list)
         current
         : int option =
-        if Map.containsKey selected cache.Value then
-            cache.Value[selected]
+
+        let selectedKey = getListTable selected
+
+        if Map.containsKey selectedKey cache.Value then
+            cache.Value[getListTable selected]
         elif target = current then
-            cache.Value <- Map.add selected (pressSum selected |> Some) cache.Value
-            pressSum selected |> Some
+            cache.Value <- Map.add selectedKey (Some selected.Length) cache.Value
+            Some selected.Length
         else
-            let eligibleValues =
-                Map.toArray selected |> Array.filter (fun entry -> snd entry < 2)
 
-            let values = Map.values cache.Value |> Seq.choose id
+            let eligibleButtons =
+                machine.Buttons
+                |> List.filter (fun button -> List.filter (fun a -> a = button) selected |> List.length < 2)
 
-            let maybeMin =
-                if Seq.length values = 0 then
-                    Option.None
-                else
-                    Seq.length values |> Some
+            let maybeMin = Map.values cache.Value |> Seq.choose id |> Seq.sort |> Seq.tryHead
 
-            if Option.exists (fun min -> pressSum selected > min) maybeMin then
+            if Option.exists (fun min -> selected.Length > min) maybeMin then
                 None
             else
                 let maybeSolution =
-                    eligibleValues
-                    |> Array.map (fun entry ->
-                        let (buttons, times) = entry
-                        let nextSelected = Map.add buttons (times + 1) selected
-                        let nextCurrent = apply current buttons
+                    eligibleButtons
+                    |> List.map (fun button ->
+                        let nextSelected = selected @ [ button ]
+                        let nextCurrent = apply current button
                         innerSolver cache target nextSelected nextCurrent)
-                    |> Array.choose id
-                    |> Array.sort
-                    |> Array.tryHead
+                    |> List.choose id
+                    |> List.sort
+                    |> List.tryHead
 
-                cache.Value <- Map.add selected maybeSolution cache.Value
+                cache.Value <- Map.add selectedKey maybeSolution cache.Value
                 maybeSolution
 
     let initialSelected: Map<int list, int> =
@@ -73,9 +74,10 @@ let solver (machine: Machine) =
     let initialCurrent =
         seq { for _ in 1 .. machine.Target.Length -> false } |> Seq.toList
 
-    let a = innerSolver cache machine.Target initialSelected initialCurrent
-    Console.WriteLine(Map.keys cache.Value |> Seq.length)
-    a
+    let solution = innerSolver cache machine.Target [] initialCurrent
+    watch.Stop()
+    Console.WriteLine $"Watch: {watch.Elapsed}"
+    solution
 
 let getTarget (row: String) =
     let index char' =

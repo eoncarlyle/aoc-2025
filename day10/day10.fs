@@ -13,24 +13,24 @@ let getGrid path =
     File.ReadAllLines path |> Array.filter stringNotEmpty
 
 
-let apply (current: bool array) (incomingButtons: int array) =
+let apply (current: bool list) (incomingButtons: int list) =
     current
-    |> Array.indexed
-    |> Array.map (fun pair ->
-        if Array.contains (fst pair) incomingButtons then
+    |> List.indexed
+    |> List.map (fun pair ->
+        if List.contains (fst pair) incomingButtons then
             not (snd pair)
         else
             snd pair)
 
-let pressSum (map: Map<int array, int>) = Map.values map |> Seq.sum
+let pressSum (map: Map<int list, int>) = Map.values map |> Seq.sum
 
 let solver (machine: Machine) =
-    let cache: ref<Map<Map<int array, int>, int option>> = Map [||] |> ref
+    let cache: ref<Map<Map<int list, int>, int option>> = Map [||] |> ref
 
     let rec innerSolver
-        (cache: ref<Map<Map<int array, int>, int option>>)
+        (cache: ref<Map<Map<int list, int>, int option>>)
         target
-        (selected: Map<int array, int>)
+        (selected: Map<int list, int>)
         current
         : int option =
         if Map.containsKey selected cache.Value then
@@ -67,11 +67,11 @@ let solver (machine: Machine) =
                 cache.Value <- Map.add selected maybeSolution cache.Value
                 maybeSolution
 
-    let initialSelected: Map<int array, int> =
-        machine.Buttons |> Array.map (fun a -> a, 0) |> Map
+    let initialSelected: Map<int list, int> =
+        machine.Buttons |> List.map (fun a -> a, 0) |> Map
 
     let initialCurrent =
-        seq { for _ in 1 .. machine.Target.Length -> false } |> Seq.toArray
+        seq { for _ in 1 .. machine.Target.Length -> false } |> Seq.toList
 
     let a = innerSolver cache machine.Target initialSelected initialCurrent
     Console.WriteLine(Map.keys cache.Value |> Seq.length)
@@ -97,12 +97,14 @@ let getTarget (row: String) =
             | '.' -> false
             | '#' -> true
             | _ as a -> failwith $"Illegal: {a}")
+        |> Array.toList
 
 
     let buttons =
         row.Substring(openButtons, closedButtons - openButtons)
         |> _.Split(" ")
-        |> Array.map (fun a -> a.Substring(1, a.Length - 2) |> _.Split(",") |> Array.map int)
+        |> Array.map (fun a -> a.Substring(1, a.Length - 2) |> _.Split(",") |> Array.map int |> Array.toList)
+        |> Array.toList
 
     { Target = target; Buttons = buttons }
 

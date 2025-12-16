@@ -46,17 +46,16 @@ let fastSolver (machine: Machine) =
             Some selected.Length
         else
 
-            let eligibleButtons =
-                machine.Buttons
-                |> List.filter (fun button -> List.filter (fun a -> a = button) selected |> List.length < 2)
-
+            let ineligibleButtons = List.countBy id selected |> List.filter (fun a -> snd a < 2) |> List.map fst
+            
             let maybeMin = cache.Values |> Seq.choose id |> Seq.sort |> Seq.tryHead
 
             if Option.exists (fun min -> selected.Length > min) maybeMin then
                 None
             else
                 let maybeSolution =
-                    eligibleButtons
+                    machine.Buttons
+                    |> List.filter (fun button -> List.contains button ineligibleButtons |> not)
                     |> List.map (fun button ->
                         let nextSelected = selected @ [ button ]
                         let nextCurrent = apply current button
@@ -101,6 +100,7 @@ let solver (machine: Machine) =
                 machine.Buttons
                 |> List.filter (fun button -> List.filter (fun a -> a = button) selected |> List.length < 2)
 
+            
             let maybeMin = Map.values cache.Value |> Seq.choose id |> Seq.sort |> Seq.tryHead
 
             if Option.exists (fun min -> selected.Length > min) maybeMin then

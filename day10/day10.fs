@@ -1,10 +1,10 @@
 module day10
 
-open day7
 open utils
 open System
 open System.IO
 open System.Diagnostics
+open System.Collections.Generic
 
 type Machine =
     { Target: bool list
@@ -24,6 +24,57 @@ let apply (current: bool list) (incomingButton: int list) =
             snd pair)
 
 let getListTable (selected: int list list) = List.countBy id selected |> List.sort
+
+let fastSolver (machine: Machine) =
+    let cache = Dictionary<list<list<int> * int>, int option>()
+    let watch = Stopwatch()
+    watch.Start()
+
+    let rec innerSolver
+        (cache: Dictionary<(int list * int) list, int option>)
+        target
+        (selected: int list list)
+        current
+        : int option =
+
+        let selectedKey = getListTable selected
+
+        if cache.ContainsKey selectedKey then
+            cache[selectedKey]
+        elif target = current then
+            cache.Add(selectedKey, Some selected.Length)
+            Some selected.Length
+        else
+
+            let eligibleButtons =
+                machine.Buttons
+                |> List.filter (fun button -> List.filter (fun a -> a = button) selected |> List.length < 2)
+
+            let maybeMin = cache.Values |> Seq.choose id |> Seq.sort |> Seq.tryHead
+
+            if Option.exists (fun min -> selected.Length > min) maybeMin then
+                None
+            else
+                let maybeSolution =
+                    eligibleButtons
+                    |> List.map (fun button ->
+                        let nextSelected = selected @ [ button ]
+                        let nextCurrent = apply current button
+                        innerSolver cache target nextSelected nextCurrent)
+                    |> List.choose id
+                    |> List.sort
+                    |> List.tryHead
+
+                cache.Add(selectedKey, maybeSolution)
+                maybeSolution
+
+    let initialCurrent =
+        seq { for _ in 1 .. machine.Target.Length -> false } |> Seq.toList
+
+    let solution = innerSolver cache machine.Target [] initialCurrent
+    watch.Stop()
+    Console.WriteLine $"Watch: {watch.Elapsed}"
+    solution
 
 let solver (machine: Machine) =
     let cache: ref<Map<list<list<int> * int>, int option>> = Map [||] |> ref
@@ -68,9 +119,6 @@ let solver (machine: Machine) =
                 cache.Value <- Map.add selectedKey maybeSolution cache.Value
                 maybeSolution
 
-    let initialSelected: Map<int list, int> =
-        machine.Buttons |> List.map (fun a -> a, 0) |> Map
-
     let initialCurrent =
         seq { for _ in 1 .. machine.Target.Length -> false } |> Seq.toList
 
@@ -113,16 +161,23 @@ let getTarget (row: String) =
 type Problem() =
     static member displaySolution problemInputs =
         problemInputs
+        |> Array.filter _.Label.Contains("benchmark")
         |> Array.iter (fun problemInput ->
             Console.WriteLine problemInput.Label
             Console.WriteLine("==============")
             let machines = getGrid problemInput.Path |> Array.map getTarget
 
-            for machine in machines do
-                Console.WriteLine(solver machine |> Option.get)
+            //for machine in machines do
+            //    Console.WriteLine(solver machine |> Option.get)
+            Console.WriteLine "Fast Solver"
+            let fastSum = machines |> Array.map (fastSolver >> Option.get) |> Array.sum
 
-            //let sum = machines |> Array.map (solver >> Option.get) |> Array.sum
-            //Console.WriteLine sum
+            Console.WriteLine "Slow Solver"
+            let sum = machines |> Array.map (solver >> Option.get) |> Array.sum
+
+            if (fastSum <> sum) then
+                failwith "Illegal"
+
             ())
 
     interface IProblem with

@@ -24,34 +24,38 @@ let getGrid path =
 
 let solver (graph: Map<string, list<string>>) =
     let discovered = HashSet<string>()
-    let cache = Dictionary<string, int>()
-    cache.Add("out", 1)
+    let cache = Dictionary<string, string list list>()
+    cache.Add("out", [ [ "out" ] ])
 
-    let rec dfs (currentNode: string) : int =
+    let rec dfs (currentNode: string) =
         discovered.Add currentNode |> ignore
 
         if cache.ContainsKey currentNode then
             cache[currentNode]
         else if currentNode.Equals("out") then
-            1
+            [ [ "out" ] ]
         else
-            let undiscoveredSum =
+            let undiscoveredPaths =
                 graph[currentNode]
                 |> List.filter (fun string -> discovered.Contains(string) |> not)
-                |> List.map (fun string -> dfs string)
-                |> List.sum
+                |> List.map (fun string -> dfs string |> List.map (fun path -> path @ [ currentNode ]))
+                |> List.concat
+                |> List.distinct
 
-            let discoveredSum =
+            let discoveredPaths =
                 graph[currentNode]
                 |> List.filter (fun string -> discovered.Contains(string))
-                |> List.map (fun string -> cache[string])
-                |> List.sum
+                |> List.map (fun string -> cache[string] |> List.map (fun path -> path @ [ currentNode ]))
+                |> List.concat
+                |> List.distinct
 
-            let total = undiscoveredSum + discoveredSum
-            cache.Add(currentNode, total)
-            total
+            let combinedPaths =
+                List.concat [ discoveredPaths; undiscoveredPaths ] |> List.distinct
 
-    string "you" |> dfs
+            cache.Add(currentNode, combinedPaths)
+            combinedPaths
+
+    string "you" |> dfs |> _.Length
 
 type Problem() =
     static member displaySolution problemInputs =
